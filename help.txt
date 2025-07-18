@@ -1,0 +1,16 @@
+# -------------------------------------- environment --------------------------------------
+1. conda 默认安装太慢
+
+conda install mamba -n base -c conda-forge
+mamba env create -f environment.yml
+
+2. train.py 运行时报错 ImportError: cannot import name 'cached_download' from 'huggingface_hub'
+
+pip install huggingface-hub==0.25.2
+
+# -------------------------------------- train --------------------------------------
+1. train.py 运行时报错 RuntimeError: CUDA error: invalid argument CUDA kernel errors might be asynchronously reported at some other API call,
+   so the stacktrace below might be incorrect. For debugging consider passing CUDA_LAUNCH_BLOCKING=1 Compile with `TORCH_USE_CUDA_DSA`
+
+CUDA_VISIBLE_DEVICES=0
+
