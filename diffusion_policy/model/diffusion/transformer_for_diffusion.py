@@ -22,6 +22,10 @@ class TransformerForDiffusion(ModuleAttrMixin):
             causal_attn: bool=False,
             time_as_cond: bool=True,
             obs_as_cond: bool=False,
+            ##################### 添加语言模态 #####################
+            language_as_cond: bool=False,
+            lang_n_emb = 0,
+            #######################################################
             n_cond_layers: int = 0
         ) -> None:
         super().__init__()
@@ -51,6 +55,8 @@ class TransformerForDiffusion(ModuleAttrMixin):
         
         if obs_as_cond:
             self.cond_obs_emb = nn.Linear(cond_dim, n_emb)
+        if language_as_cond:
+            self.cond_lang_emb = nn.Linear(lang_n_emb, n_emb)
 
         self.cond_pos_emb = None
         self.encoder = None
@@ -120,14 +126,15 @@ class TransformerForDiffusion(ModuleAttrMixin):
             mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
             self.register_buffer("mask", mask)
             
-            if time_as_cond and obs_as_cond:
+            if time_as_cond and obs_as_cond and language_as_cond:
                 S = T_cond
                 t, s = torch.meshgrid(
                     torch.arange(T),
                     torch.arange(S),
                     indexing='ij'
                 )
-                mask = t >= (s-1) # add one dimension since time is the first token in cond
+                # mask = t >= (s-1) # add one dimension since time is the first token in cond
+                mask = t >= (s-2)
                 mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
                 self.register_buffer('memory_mask', mask)
             else:
@@ -146,6 +153,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
         self.horizon = horizon
         self.time_as_cond = time_as_cond
         self.obs_as_cond = obs_as_cond
+        self.language_as_cond = language_as_cond
         self.encoder_only = encoder_only
 
         # init
@@ -308,6 +316,9 @@ class TransformerForDiffusion(ModuleAttrMixin):
         else:
             # encoder
             cond_embeddings = time_emb
+            if self.language_as_cond:
+                cond_lang_emb = self.cond_lang_emb(cond['language'])
+                cond_embeddings = torch.cat([cond_embeddings, cond_lang_emb], dim=1)
             if self.obs_as_cond:
                 cond_obs_emb = self.cond_obs_emb(cond)
                 # (B,To,n_emb)
