@@ -3,6 +3,20 @@ Usage:
 Training:
 python train.py --config-name=train_diffusion_lowdim_workspace
 """
+def debug_on():
+    import os
+    import sys
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    sys.argv = [
+        "train.py",
+        "--config-dir=diffusion_policy/config",
+        "--config-name=train_diffusion_transformer_hybrid_image_language_workspace.yaml",
+        "training.seed=42",
+        "training.device=cuda:0",
+        "hydra.run.dir=outputs/MultiTask-v1",
+    ]
+debug_on()
+
 
 import sys
 # use line-buffering for both stdout and stderr
