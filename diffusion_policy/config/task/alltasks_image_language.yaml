@@ -1,0 +1,46 @@
+name: alltasks_image_language
+
+image_shape: &image_shape [3, 256, 256]
+shape_meta: &shape_meta
+  # acceptable types: rgb, low_dim
+  obs:
+    image:
+      shape: *image_shape
+      type: rgb
+    wrist_image:
+      shape: *image_shape
+      type: rgb
+    state:
+      shape: [8]
+      type: low_dim
+  action:
+    shape: [7]
+  # task description is endecoded by BERT
+  lang_emb:
+    shape: [1, 768]
+
+env_runner:
+  _target_: diffusion_policy.env_runner.pusht_image_runner.PushTImageRunner
+  n_train: 6
+  n_train_vis: 2
+  train_start_seed: 0
+  n_test: 50
+  n_test_vis: 4
+  legacy_test: True
+  test_start_seed: 100000
+  max_steps: 300
+  n_obs_steps: ${n_obs_steps}
+  n_action_steps: ${n_action_steps}
+  fps: 10
+  past_action: ${past_action_visible}
+  n_envs: null
+
+dataset:
+  _target_: diffusion_policy.dataset.alltasks_image_language_dataset.AllTasksImageLanguageDataset
+  zarr_path: data/MultiTask-v1/zarr_panda_traj400_multiview
+  horizon: ${horizon}
+  pad_before: ${eval:'${n_obs_steps}-1'}
+  pad_after: ${eval:'${n_action_steps}-1'}
+  seed: 42
+  val_ratio: 0.1
+  max_train_episodes: null
