@@ -12,6 +12,7 @@ from diffusion_policy.model.common.dict_of_tensor_mixin import DictOfTensorMixin
 class LinearNormalizer(DictOfTensorMixin):
     avaliable_modes = ['limits', 'gaussian']
     
+    #! 构造数据集各个维的归一化参数 params_dict
     @torch.no_grad()
     def fit(self,
         data: Union[Dict, torch.Tensor, np.ndarray, zarr.Array],

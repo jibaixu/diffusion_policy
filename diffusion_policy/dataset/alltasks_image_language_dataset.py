@@ -22,6 +22,7 @@ class AllTasksImageLanguageDataset(BaseImageDataset):
             ):
         
         super().__init__()
+        #! 懒加载数据集到 replay_buffer 中
         self.replay_buffer = ReplayBuffer.copy_from_path(
             zarr_path, keys=['base_image', 'hand_image', 'state', 'action', 'lang_emb'])
         val_mask = get_val_mask(
@@ -57,14 +58,19 @@ class AllTasksImageLanguageDataset(BaseImageDataset):
         val_set.train_mask = ~self.train_mask
         return val_set
 
+    #!############# 根据数据集构造归一化器 #############
     def get_normalizer(self, mode='limits', **kwargs):
+        #! 定义需要归一化的数据字典
         data = {
             'action': self.replay_buffer['action'],
-            'agent_pos': self.replay_buffer['state'][...,:2]
+            'state': self.replay_buffer['state'],
         }
         normalizer = LinearNormalizer()
+        #! 数据字典中 action 和 state 字段构造线性归一化器
         normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
+        #! 数据字典中图像字段使用 SingleFieldLinearNormalizer 构造
         normalizer['image'] = get_image_range_normalizer()
+        normalizer['wrist_image'] = get_image_range_normalizer()
         return normalizer
 
     def __len__(self) -> int:

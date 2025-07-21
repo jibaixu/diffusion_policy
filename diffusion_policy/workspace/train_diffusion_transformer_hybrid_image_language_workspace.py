@@ -239,7 +239,9 @@ class TrainDiffusionTransformerHybridImageLanguageWorkspace(BaseWorkspace):
                     with torch.no_grad():
                         # sample trajectory from training set, and evaluate difference
                         batch = dict_apply(train_sampling_batch, lambda x: x.to(device, non_blocking=True))
-                        obs_dict = batch['obs']
+                        obs_dict = {}
+                        obs_dict['obs'] = batch['obs']
+                        obs_dict['lang_emb'] = batch['lang_emb'] #! 训练时直接输入 batch，评估时在 obs 字段中插入 lang_emb 以便传输
                         gt_action = batch['action']
                         
                         result = policy.predict_action(obs_dict)

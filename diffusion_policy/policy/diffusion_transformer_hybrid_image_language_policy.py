@@ -233,7 +233,7 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
         """
         assert 'past_action' not in obs_dict # not implemented yet
         # normalize input
-        nobs = self.normalizer.normalize(obs_dict)
+        nobs = self.normalizer.normalize(obs_dict['obs'])
         value = next(iter(nobs.values()))
         B, To = value.shape[:2]
         T = self.horizon
@@ -246,14 +246,16 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
         dtype = self.dtype
 
         # handle different ways of passing observation
-        cond = None
+        #! 修改cond的类型为字典，用于包含语言模态的特征
+        # cond = None
+        cond = dict()
         cond_data = None
         cond_mask = None
         if self.obs_as_cond:
             this_nobs = dict_apply(nobs, lambda x: x[:,:To,...].reshape(-1,*x.shape[2:]))
             nobs_features = self.obs_encoder(this_nobs)
             # reshape back to B, To, Do
-            cond = nobs_features.reshape(B, To, -1)
+            cond['obs'] = nobs_features.reshape(B, To, -1)
             shape = (B, T, Da)
             if self.pred_action_steps_only:
                 shape = (B, self.n_action_steps, Da)
@@ -270,6 +272,11 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
             cond_mask = torch.zeros_like(cond_data, dtype=torch.bool)
             cond_data[:,:To,Da:] = nobs_features
             cond_mask[:,:To,Da:] = True
+
+        if self.language_as_cond:
+            lang_features = obs_dict['lang_emb'][:,:1,...]
+            lang_features = lang_features.reshape(-1, *lang_features.shape[2:])
+            cond['language'] = lang_features.reshape(B, 1, -1)
 
         # run sampling
         nsample = self.conditional_sample(
@@ -330,15 +337,19 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
         To = self.n_obs_steps
 
         # handle different ways of passing observation
-        cond = None
+        #! 修改cond的类型为字典，用于包含语言模态的特征
+        # cond = None
+        cond = dict()
         trajectory = nactions
         if self.obs_as_cond:
             # reshape B, T, ... to B*T
+            #! 数据集中的 image 维度为 B*horizon*c*h*w ，horizon ≥ n_obs_steps ，这样可以自定义 n_obs_steps 而不会被数据集限制
+            #! 这里将 nobs 的维度从 B, T, c, h, w 转换为 B*n_obs_steps, c, h, w
             this_nobs = dict_apply(nobs, 
                 lambda x: x[:,:To,...].reshape(-1,*x.shape[2:]))
             nobs_features = self.obs_encoder(this_nobs)
             # reshape back to B, T, Do
-            cond = nobs_features.reshape(batch_size, To, -1)
+            cond['obs'] = nobs_features.reshape(batch_size, To, -1)
             if self.pred_action_steps_only:
                 start = To - 1
                 end = start + self.n_action_steps
@@ -353,7 +364,10 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
 
         #! 在模型的 条件输入 中添加 语言嵌入
         if self.language_as_cond:
-            cond['language'] = batch['lang_emb']
+            #! 对 lang_emb 同样进行维度转换 (lang_emb: B, horizon, 1, 768 是已经经过 BERT 编码后的结果)
+            lang_features = batch['lang_emb'][:,:1,...]
+            lang_features = lang_features.reshape(-1, *lang_features.shape[2:])
+            cond['language'] = lang_features.reshape(batch_size, 1, -1)
 
         # generate impainting mask
         if self.pred_action_steps_only:

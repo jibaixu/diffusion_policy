@@ -1,4 +1,4 @@
-from typing import Union, Optional, Tuple
+from typing import Union, Optional, Tuple, Dict
 import logging
 import torch
 import torch.nn as nn
@@ -43,6 +43,10 @@ class TransformerForDiffusion(ModuleAttrMixin):
         if obs_as_cond:
             assert time_as_cond
             T_cond += n_obs_steps
+
+        language_as_cond = lang_n_emb > 0
+        if language_as_cond:
+            T_cond += 1
 
         # input embedding stem
         self.input_emb = nn.Linear(input_dim, n_emb)
@@ -278,11 +282,12 @@ class TransformerForDiffusion(ModuleAttrMixin):
     def forward(self, 
         sample: torch.Tensor, 
         timestep: Union[torch.Tensor, float, int], 
-        cond: Optional[torch.Tensor]=None, **kwargs):
+        cond: Optional[Union[torch.Tensor, Dict[str, torch.Tensor]]] = None, **kwargs):
         """
         x: (B,T,input_dim)
         timestep: (B,) or int, diffusion step
-        cond: (B,T',cond_dim)
+        #! 修改输入参数cond的类型为dict，包含图像和语言的特征
+        cond: (B,T',cond_dim) or dict of (B, T', cond_dim)
         output: (B,T,input_dim)
         """
         # 1. time
@@ -296,6 +301,10 @@ class TransformerForDiffusion(ModuleAttrMixin):
         timesteps = timesteps.expand(sample.shape[0])
         time_emb = self.time_emb(timesteps).unsqueeze(1)
         # (B,1,n_emb)
+
+        #! 兼容不包含语言模态的输入
+        if isinstance(cond, torch.Tensor):
+            cond = {'obs': cond}
 
         # process input
         input_emb = self.input_emb(sample)
@@ -320,7 +329,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
                 cond_lang_emb = self.cond_lang_emb(cond['language'])
                 cond_embeddings = torch.cat([cond_embeddings, cond_lang_emb], dim=1)
             if self.obs_as_cond:
-                cond_obs_emb = self.cond_obs_emb(cond)
+                cond_obs_emb = self.cond_obs_emb(cond['obs'])
                 # (B,To,n_emb)
                 cond_embeddings = torch.cat([cond_embeddings, cond_obs_emb], dim=1)
             tc = cond_embeddings.shape[1]
