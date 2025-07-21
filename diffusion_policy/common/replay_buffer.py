@@ -171,7 +171,10 @@ class ReplayBuffer:
             for key in keys:
                 arr = src_root['data'][key]
                 data[key] = arr[:]
-
+                #! Debug: 取部分数据加载，否则io 太慢
+            #     data[key] = arr[:3790]
+            # meta['episode_ends'] = src_root['meta']['episode_ends'][:50]
+            
             root = {
                 'meta': meta,
                 'data': data
