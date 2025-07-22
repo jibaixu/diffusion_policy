@@ -2,6 +2,17 @@
 Usage:
 python eval.py --checkpoint data/image/pusht/diffusion_policy_cnn/train_0/checkpoints/latest.ckpt -o data/pusht_eval_output
 """
+def debug_on():
+    import os
+    import sys
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    sys.argv = [
+        "eval.py",
+        "--checkpoint=outputs/MultiTasks-v1/checkpoints/latest.ckpt",
+        "--output_dir=train_diffusion_transformer_hybrid_image_language_workspace.yaml",
+    ]
+debug_on()
+
 
 import sys
 # use line-buffering for both stdout and stderr
