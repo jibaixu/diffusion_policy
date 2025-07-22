@@ -13,7 +13,7 @@ def debug_on():
         "--config-name=train_diffusion_transformer_hybrid_image_language_workspace.yaml",
         "training.seed=42",
         "training.device=cuda:0",
-        "hydra.run.dir=outputs/MultiTask-v1",
+        "hydra.run.dir=outputs/train/MultiTasks-v1/xarm",
     ]
 debug_on()
 

@@ -37,7 +37,7 @@ env_runner:
 
 dataset:
   _target_: diffusion_policy.dataset.alltasks_image_language_dataset.AllTasksImageLanguageDataset
-  zarr_path: data/MultiTask-v1/zarr_panda_traj400_multiview
+  zarr_path: data/MultiTasks-v1/zarr_xarm_traj400_multiview
   horizon: ${horizon}
   pad_before: ${eval:'${n_obs_steps}-1'}
   pad_after: ${eval:'${n_action_steps}-1'}
