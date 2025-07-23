@@ -168,13 +168,129 @@ class ReplayBuffer:
             if keys is None:
                 keys = src_root['data'].keys()
             data = dict()
-            for key in keys:
-                arr = src_root['data'][key]
-                data[key] = arr[:]
+            # for key in keys:
+            #     arr = src_root['data'][key]
+            #     data[key] = arr[:]
                 #! Debug: 取部分数据加载，否则io 太慢
             #     data[key] = arr[:3790]
             # meta['episode_ends'] = src_root['meta']['episode_ends'][:50]
             
+            #! >>>>>>>>>>>>>>>>>>>>> 分块读取 zarr 数据 >>>>>>>>>>>>>>>>>>>>>
+            import time
+            import psutil
+            import gc
+
+            chunked_loading = True
+            chunk_size = 5000
+            memory_threshold = 80
+
+            # Separate keys by size for different loading strategies
+            large_keys = []
+            small_keys = []
+            
+            for key in keys:
+                arr = src_root["data"][key]
+                # Consider arrays > 100MB as large (threshold can be adjusted)
+                size_mb = arr.nbytes / (1024**2)
+                if chunked_loading and size_mb > 100:
+                    large_keys.append((key, arr, size_mb))
+                else:
+                    small_keys.append((key, arr, size_mb))
+            
+            # Load small arrays first
+            print(f"📦 Loading {len(small_keys)} small arrays...")
+            for key, arr, size_mb in small_keys:
+                print(f"   {key}: {size_mb:.1f}MB...", end="")
+                start_time = time.time()
+                data[key] = arr[:]
+                load_time = time.time() - start_time
+                print(f" ✅ {load_time:.1f}s")
+            
+            # Load large arrays with chunked strategy
+            for key, arr, size_mb in large_keys:
+                print(f"\n🔧 Loading large array '{key}' ({size_mb:.1f}MB) with chunked strategy...")
+                
+                # Check memory before starting
+                memory = psutil.virtual_memory()
+                if memory.percent > memory_threshold:
+                    print(f"⚠️ Memory usage high ({memory.percent:.1f}%), forcing GC...")
+                    gc.collect()
+                    memory = psutil.virtual_memory()
+                    if memory.percent > 90:
+                        print(f"❌ Memory critical ({memory.percent:.1f}%), aborting large array loading")
+                        continue
+                
+                # Calculate chunking
+                effective_chunk_size = min(chunk_size, arr.shape[0])
+                total_chunks = (arr.shape[0] + effective_chunk_size - 1) // effective_chunk_size
+                
+                print(f"   Strategy: {total_chunks} chunks, {effective_chunk_size} steps per chunk")
+                
+                # Pre-allocate result array
+                try:
+                    result = np.empty(arr.shape, dtype=arr.dtype)
+                except MemoryError:
+                    print(f"❌ Cannot allocate memory for {key}, skipping...")
+                    continue
+                
+                # Chunked loading
+                start_time = time.time()
+                success = True
+                
+                for i, chunk_start in enumerate(range(0, arr.shape[0], effective_chunk_size)):
+                    chunk_end = min(chunk_start + effective_chunk_size, arr.shape[0])
+                    chunk_load_start = time.time()
+                    
+                    try:
+                        result[chunk_start:chunk_end] = arr[chunk_start:chunk_end]
+                    except Exception as e:
+                        print(f"\n❌ Chunk {i+1} failed: {e}")
+                        print("   Attempting single-step loading...")
+                        # Fallback: load step by step
+                        try:
+                            for j in range(chunk_start, chunk_end):
+                                result[j:j+1] = arr[j:j+1]
+                        except Exception as e2:
+                            print(f"   ❌ Single-step loading also failed: {e2}")
+                            success = False
+                            break
+                    
+                    # Progress reporting
+                    chunk_time = time.time() - chunk_load_start
+                    progress = int((i + 1) / total_chunks * 100)
+                    chunk_mb = (chunk_end - chunk_start) * np.prod(arr.shape[1:]) * arr.dtype.itemsize / (1024**2)
+                    chunk_speed = chunk_mb / chunk_time if chunk_time > 0 else 0
+                    
+                    # ETA calculation
+                    elapsed = time.time() - start_time
+                    avg_speed = ((i + 1) * chunk_mb) / elapsed if elapsed > 0 else 0
+                    remaining_chunks = total_chunks - i - 1
+                    eta = remaining_chunks * chunk_time
+                    
+                    print(f"   Progress: {progress:3d}% ({i+1}/{total_chunks}) | "
+                        f"Speed: {chunk_speed:.1f}MB/s | Avg: {avg_speed:.1f}MB/s | "
+                        f"ETA: {eta:.0f}s", end='\r')
+                    
+                    # Memory management
+                    if (i + 1) % 2 == 0:
+                        gc.collect()
+                    
+                    # Check memory usage
+                    memory = psutil.virtual_memory()
+                    if memory.percent > 90:
+                        print(f"\n⚠️ Memory critical ({memory.percent:.1f}%), pausing for cleanup...")
+                        gc.collect()
+                        time.sleep(1)
+                
+                if success:
+                    data[key] = result
+                    total_time = time.time() - start_time
+                    final_speed = size_mb / total_time
+                    print(f"\n   ✅ {key} loaded: {total_time:.1f}s, {final_speed:.1f}MB/s")
+                else:
+                    print(f"\n   ❌ {key} loading failed, skipping...")
+            #! <<<<<<<<<<<<<<<<<<<<< 分块读取 zarr 数据 <<<<<<<<<<<<<<<<<<<<<
+
             root = {
                 'meta': meta,
                 'data': data
