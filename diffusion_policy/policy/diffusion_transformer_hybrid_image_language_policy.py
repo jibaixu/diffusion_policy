@@ -225,10 +225,9 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
 
         return trajectory
 
-
     def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         """
-        obs_dict: must include "obs" key
+        obs_dict: must include "obs" key and if language_as_cond is True then must include "lang_emb" key
         result: must include "action" key
         """
         assert 'past_action' not in obs_dict # not implemented yet
