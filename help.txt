@@ -1,20 +1,30 @@
 # -------------------------------------- environment --------------------------------------
 1. conda 默认安装太慢
 
-conda install mamba -n base -c conda-forge
-mamba env create -f conda_environment.yaml
+    conda install mamba -n base -c conda-forge
+    mamba env create -f conda_environment.yaml
 
 2. train.py 运行时报错 ImportError: cannot import name 'cached_download' from 'huggingface_hub'
 
-pip install huggingface-hub==0.25.2
+    pip install huggingface-hub==0.25.2
+
+3. BERT 需安装 transformers 但高版本不适配 huggingface-hub==0.25.2
+
+    pip install transformers==4.40.0
+
+4. 需手动安装高版本 pytorch 以适配 ManiSkill
+
+    pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+
+    【为了实现环境隔离，建议将模型基于socket服务部署到本地端口上，而评估的 ManiSkill 使用独立的环境】
 
 # -------------------------------------- train --------------------------------------
 1. train.py 运行时报错 RuntimeError: CUDA error: invalid argument CUDA kernel errors might be asynchronously reported at some other API call,
    so the stacktrace below might be incorrect. For debugging consider passing CUDA_LAUNCH_BLOCKING=1 Compile with `TORCH_USE_CUDA_DSA`
 
-CUDA_VISIBLE_DEVICES=0
+    CUDA_VISIBLE_DEVICES=0
 
 2. 项目 ReplayBuffer 类读取的数据格式是 zarr，训练时会全部读入内存，debug 时读入速度太慢
 
-在 ReplayBuffer 内仅加载部分数据
-diffusion_policy/common/replay_buffer.py line 173
+    在 ReplayBuffer 内仅加载部分数据
+    diffusion_policy/common/replay_buffer.py line 173
