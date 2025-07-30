@@ -6,14 +6,23 @@ python train.py --config-name=train_diffusion_lowdim_workspace
 def debug_on():
     import os
     import sys
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+    # os.environ['http_proxy'] = 'http://100.84.172.223:7897'
+    # os.environ['https_proxy'] = 'http://100.84.172.223:7897'
+    # os.environ['ftp_proxy'] = 'http://100.84.172.223:7897'
     sys.argv = [
         "train.py",
         "--config-dir=diffusion_policy/config",
         "--config-name=train_diffusion_transformer_hybrid_image_language_workspace.yaml",
+        "task.dataset.zarr_path=data/AllTasks-v2/zarr_panda_traj800_multiview",
+        "hydra.run.dir=outputs/train/AllTasks-v2/panda",
         "training.seed=42",
         "training.device=cuda:0",
-        "hydra.run.dir=outputs/train/MultiTasks-v1/xarm",
+        "training.num_epochs=400",
+        "training.checkpoint_every=20",
+        "dataloader.batch_size=64",
+        "val_dataloader.batch_size=64",
+        "logging.mode=offline",    # ["online", "offline", "disabled"]
     ]
 debug_on()
 
