@@ -63,7 +63,7 @@ class LowdimMaskGenerator(ModuleAttrMixin):
         assert D == (self.action_dim + self.obs_dim)
 
         # create all tensors on this device
-        rng = torch.Generator(device=device)
+        rng = torch.Generator(device=device)    #! torch.rand 需要设置 generator 对象来控制随机种子，同时该生成器支持在 device 上
         if seed is not None:
             rng = rng.manual_seed(seed)
 

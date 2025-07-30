@@ -52,7 +52,7 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
         super().__init__()
 
         # parse shape_meta
-        action_shape = shape_meta['action']['shape']
+        action_shape = shape_meta['action']['shape']    #! action_shape [D]
         assert len(action_shape) == 1
         action_dim = action_shape[0]
         obs_shape_meta = shape_meta['obs']
@@ -112,6 +112,7 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
 
         obs_encoder = policy.nets['policy'].nets['encoder'].nets['obs']
         
+        #! 将 batch norm 替换为 group norm，group norm 在每一个样本的通道组中进行归一化，避免的 batchsize 大小的影响
         if obs_encoder_group_norm:
             # replace batch norm with group norm
             replace_submodules(
@@ -339,7 +340,7 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
         #! 修改cond的类型为字典，用于包含语言模态的特征
         # cond = None
         cond = dict()
-        trajectory = nactions
+        trajectory = nactions   #! trajectory [B, T, D]
         if self.obs_as_cond:
             # reshape B, T, ... to B*T
             #! 数据集中的 image 维度为 B*horizon*c*h*w ，horizon ≥ n_obs_steps ，这样可以自定义 n_obs_steps 而不会被数据集限制
@@ -378,7 +379,7 @@ class DiffusionTransformerHybridImageLanguagePolicy(BaseImagePolicy):
         noise = torch.randn(trajectory.shape, device=trajectory.device)
         bsz = trajectory.shape[0]
         # Sample a random timestep for each image
-        timesteps = torch.randint(
+        timesteps = torch.randint(      #! timesteps [B]
             0, self.noise_scheduler.config.num_train_timesteps, 
             (bsz,), device=trajectory.device
         ).long()

@@ -50,7 +50,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
 
         # input embedding stem
         self.input_emb = nn.Linear(input_dim, n_emb)
-        self.pos_emb = nn.Parameter(torch.zeros(1, T, n_emb))
+        self.pos_emb = nn.Parameter(torch.zeros(1, T, n_emb))   #! action 在时间步上的位置编码
         self.drop = nn.Dropout(p_drop_emb)
 
         # cond encoder
@@ -67,7 +67,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
         self.decoder = None
         encoder_only = False
         if T_cond > 0:
-            self.cond_pos_emb = nn.Parameter(torch.zeros(1, T_cond, n_emb))
+            self.cond_pos_emb = nn.Parameter(torch.zeros(1, T_cond, n_emb)) #! cond 在各个部分的位置编码: time + obs + lang
             if n_cond_layers > 0:
                 encoder_layer = nn.TransformerEncoderLayer(
                     d_model=n_emb,
@@ -85,7 +85,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
             else:
                 self.encoder = nn.Sequential(
                     nn.Linear(n_emb, 4 * n_emb),
-                    nn.Mish(),
+                    nn.Mish(),      #! 非线性激活函数
                     nn.Linear(4 * n_emb, n_emb)
                 )
             # decoder
@@ -196,7 +196,7 @@ class TransformerForDiffusion(ModuleAttrMixin):
         elif isinstance(module, nn.LayerNorm):
             torch.nn.init.zeros_(module.bias)
             torch.nn.init.ones_(module.weight)
-        elif isinstance(module, TransformerForDiffusion):
+        elif isinstance(module, TransformerForDiffusion):   #! 初始化模型中创建的两个位置编码层，这个位置编码是可学习的
             torch.nn.init.normal_(module.pos_emb, mean=0.0, std=0.02)
             if module.cond_obs_emb is not None:
                 torch.nn.init.normal_(module.cond_pos_emb, mean=0.0, std=0.02)
