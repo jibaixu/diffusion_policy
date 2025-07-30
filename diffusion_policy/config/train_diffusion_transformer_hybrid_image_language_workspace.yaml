@@ -107,6 +107,7 @@ training:
   checkpoint_every: 20
   val_every: 1
   sample_every: 5
+  epoch_skip: 10
   # steps per epoch
   max_train_steps: null
   max_val_steps: null
