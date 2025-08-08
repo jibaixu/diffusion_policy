@@ -30,10 +30,10 @@ from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from diffusion_policy.common.pytorch_util import dict_apply
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
 ROBOT = "panda" # ["panda", "widowxai", "xarm6", "xarm7"]
-EPOCH = 20
+EPOCH = 140
 
 BENCHMARK_ENVS = ["PickCube-v1", "PushCube-v1", "StackCube-v1", "PullCube-v1", "PullCubeTool-v1", "PlaceSphere-v1", "LiftPegUpright-v1",]
 ENV_INSTRUCTION_MAP = {
@@ -150,6 +150,9 @@ class MultiStepObservationQueue:
             "state":        ndarray[B=1, To=2, D=8], device=cpu
         }
         """
+        assert  len(self.image_queue) == self.n_obs_steps and \
+                len(self.wrist_image_queue) == self.n_obs_steps and \
+                len(self.state_queue) == self.n_obs_steps
         return {
             "image": np.concatenate(list(self.image_queue), axis=1),
             "wrist_image": np.concatenate(list(self.wrist_image_queue), axis=1),
@@ -324,6 +327,7 @@ def main(args: EvalConfig):
                         if terminated:
                             task_successes += 1
                             total_successes += 1
+                            break
 
                 profiler.log_stats("env.step")
 
