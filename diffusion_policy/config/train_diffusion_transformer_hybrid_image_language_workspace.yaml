@@ -90,7 +90,6 @@ training:
   device: "cuda:0"
   seed: 42
   debug: False
-  # resume: True
   resume: False
   # optimization
   lr_scheduler: cosine
