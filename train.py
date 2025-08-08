@@ -14,14 +14,19 @@ def debug_on():
         "train.py",
         "--config-dir=diffusion_policy/config",
         "--config-name=train_diffusion_transformer_hybrid_image_language_workspace.yaml",
-        "task.dataset.zarr_path=data/AllTasks-v3/zarr_panda_traj700_multiview",
+        "task.dataset.zarr_path=/home/xieenci/affordance-code/ManiSkill/HPT/raw_data/zarr_panda_resnet_traj700_multiview",
         "hydra.run.dir=outputs/train/AllTasks-v3/panda",
         "training.seed=42",
         "training.device=cuda:0",
         "training.num_epochs=300",
         "training.checkpoint_every=20",
+        "training.resume=True",
         "dataloader.batch_size=64",
+        "dataloader.num_workers=4",
+        "dataloader.persistent_workers=False",
         "val_dataloader.batch_size=64",
+        "val_dataloader.num_workers=4",
+        "val_dataloader.persistent_workers=False",
         "logging.mode=offline",    # ["online", "offline", "disabled"]
     ]
 debug_on()
