@@ -121,28 +121,8 @@ class SequenceSampler:
     def sample_sequence(self, idx):
         #! >>>>>>>> 重新构造 zarr 数据对象 >>>>>>>>
         import zarr, os
-        zarr_path = '/data1/jibaixu/datasets/Boundless/zarr/AllTasks-v3/zarr_panda_traj700_multiview'
-        src_store = zarr.open(os.path.expanduser(zarr_path), 'r').store
-        src_root = zarr.group(src_store)
-        meta = dict()
-        for key, value in src_root['meta'].items():
-            if isinstance(value, zarr.Group):
-                continue
-            if len(value.shape) == 0:
-                meta[key] = np.array(value)
-            else:
-                meta[key] = value[:]
-        keys=['base_image', 'hand_image', 'state', 'action', 'lang_emb']
-        data = dict()
-        for key in keys:
-            arr = src_root['data'][key]
-            data[key] = arr
-        root = {
-            'meta': meta,
-            'data': data
-        }
-        from diffusion_policy.common.replay_buffer import ReplayBuffer
-        replay_buffer = ReplayBuffer(root)
+        zarr_path = 'data/AllTasks-v3/zarr_panda_traj700_multiview'
+        src_root = zarr.open(os.path.expanduser(zarr_path), 'r')
         #! <<<<<<<< 重新构造 zarr 数据对象 <<<<<<<<
 
         buffer_start_idx, buffer_end_idx, sample_start_idx, sample_end_idx \
@@ -150,7 +130,8 @@ class SequenceSampler:
         result = dict()
         for key in self.keys:
             # input_arr = self.replay_buffer[key]
-            input_arr = replay_buffer[key]
+            #! 根据 zarr 数据对象获取数据
+            input_arr = src_root['data'][key]
             # performance optimization, avoid small allocation if possible
             if key not in self.key_first_k:
                 sample = input_arr[buffer_start_idx:buffer_end_idx]
