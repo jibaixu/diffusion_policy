@@ -30,12 +30,18 @@ from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from diffusion_policy.common.pytorch_util import dict_apply
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '5'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
-ROBOT = "panda" # ["panda", "widowxai", "xarm6", "xarm7"]
-EPOCH = 140
+ROBOT = "widowxai" # ["panda", "widowxai", "xarm6", "xarm7"]
+EPOCH = 100
 
 BENCHMARK_ENVS = ["PickCube-v1", "PushCube-v1", "StackCube-v1", "PullCube-v1", "PullCubeTool-v1", "PlaceSphere-v1", "LiftPegUpright-v1",]
+ROBOT_UIDS_MAP = {
+    "panda": "panda_wristcam",
+    "widowxai": "widowxai_wristcam",
+    "xarm6": "xarm6_robotiq_wristcam",
+    "xarm7": "xarm7_robotiq_wristcam",
+}
 ENV_INSTRUCTION_MAP = {
     "PickCube-v1": "Pick up the cube.",
     "PushCube-v1": "Push the cube to the target position.",
@@ -224,7 +230,7 @@ def main(args: EvalConfig):
                     env = gym.make(env_id,
                                 obs_mode=args.obs_mode,
                                 sim_config=sim_config,
-                                robot_uids="panda_wristcam",
+                                robot_uids=ROBOT_UIDS_MAP[ROBOT],
                                 sensor_configs=dict(shader_pack=args.shader),
                                 human_render_camera_configs=dict(shader_pack=args.shader),
                                 viewer_camera_configs=dict(shader_pack=args.shader),
