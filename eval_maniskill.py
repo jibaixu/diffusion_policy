@@ -30,10 +30,10 @@ from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from diffusion_policy.common.pytorch_util import dict_apply
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '4'
 
 ROBOT = "widowxai" # ["panda", "widowxai", "xarm6", "xarm7"]
-EPOCH = 100
+EPOCH = 160
 
 BENCHMARK_ENVS = ["PickCube-v1", "PushCube-v1", "StackCube-v1", "PullCube-v1", "PullCubeTool-v1", "PlaceSphere-v1", "LiftPegUpright-v1",]
 ROBOT_UIDS_MAP = {
@@ -324,7 +324,9 @@ def main(args: EvalConfig):
                             action_queue.extend(action_chunk)
                         
                         action = action_queue.popleft()
-  
+                        if ROBOT == "widowxai":     # widowxai 本体在训练时动作维是7，但在评估时模拟环境中需要8维
+                            action = np.append(action, action[-1])
+
                         obs, rew, terminated, truncated, info = env.step(action)
                         if args.save_video:
                             images.append(np.expand_dims(env.render(), axis=0)) if args.cpu_sim else images.append(env.render().cpu().numpy())
