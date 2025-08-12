@@ -32,8 +32,8 @@ from diffusion_policy.common.pytorch_util import dict_apply
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '4'
 
-ROBOT = "widowxai" # ["panda", "widowxai", "xarm6", "xarm7"]
-EPOCH = 160
+ROBOT = "panda" # ["panda", "widowxai", "xarm6", "xarm7"]
+EPOCH = 260
 
 BENCHMARK_ENVS = ["PickCube-v1", "PushCube-v1", "StackCube-v1", "PullCube-v1", "PullCubeTool-v1", "PlaceSphere-v1", "LiftPegUpright-v1",]
 ROBOT_UIDS_MAP = {
@@ -353,7 +353,7 @@ def main(args: EvalConfig):
         success_dict[env_id] = task_successes / args.num_per_task
     print(f"Total Success Rate: {total_successes / (args.num_per_task * len(BENCHMARK_ENVS))}")
     success_dict['total_success'] = total_successes / (args.num_per_task * len(BENCHMARK_ENVS))
-    with open(f"{args.save_path}/success_dict.json", "w") as f:
+    with open(f"{os.path.dirname(args.save_path)}/success_dict_epoch_{EPOCH}.json", "w") as f:
         json.dump(success_dict, f)
     
 
