@@ -18,11 +18,14 @@ class AllTasksImageLanguageDataset(BaseImageDataset):
             pad_after=0,
             seed=42,
             val_ratio=0.0,
-            max_train_episodes=None
+            max_train_episodes=None,
+            *args,
+            **kwargs,
             ):
         
         super().__init__()
         #! 懒加载数据集到 replay_buffer 中
+        self.zarr_path = zarr_path
         self.replay_buffer = ReplayBuffer.copy_from_path(
             zarr_path, keys=['base_image', 'hand_image', 'state', 'action', 'lang_emb'])
         val_mask = get_val_mask(
@@ -40,7 +43,8 @@ class AllTasksImageLanguageDataset(BaseImageDataset):
             sequence_length=horizon,
             pad_before=pad_before, 
             pad_after=pad_after,
-            episode_mask=train_mask)
+            episode_mask=train_mask,
+            zarr_path=zarr_path)
         self.train_mask = train_mask
         self.horizon = horizon
         self.pad_before = pad_before
@@ -53,7 +57,8 @@ class AllTasksImageLanguageDataset(BaseImageDataset):
             sequence_length=self.horizon,
             pad_before=self.pad_before, 
             pad_after=self.pad_after,
-            episode_mask=~self.train_mask
+            episode_mask=~self.train_mask,
+            zarr_path=self.zarr_path,
             )
         val_set.train_mask = ~self.train_mask
         return val_set
