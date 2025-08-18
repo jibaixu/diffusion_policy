@@ -22,6 +22,7 @@ import shutil
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from diffusion_policy.policy.diffusion_transformer_hybrid_image_language_policy import DiffusionTransformerHybridImageLanguagePolicy
 from diffusion_policy.dataset.base_dataset import BaseImageDataset
+from diffusion_policy.dataset.alltasks_mixed_robot_dataset import AllTasksMixedRobotDataset
 from diffusion_policy.env_runner.base_image_runner import BaseImageRunner
 from diffusion_policy.common.checkpoint_util import TopKCheckpointManager
 from diffusion_policy.common.json_logger import JsonLogger
@@ -69,7 +70,10 @@ class TrainDiffusionTransformerHybridImageLanguageWorkspace(BaseWorkspace):
 
         # configure dataset
         dataset: BaseImageDataset
-        dataset = hydra.utils.instantiate(cfg.task.dataset)
+        if 'zarr_paths' in cfg.task.dataset and cfg.task.dataset['zarr_paths']:
+            dataset = AllTasksMixedRobotDataset(cfg.task.dataset)
+        else:
+            dataset = hydra.utils.instantiate(cfg.task.dataset)
         assert isinstance(dataset, BaseImageDataset)
         train_dataloader = DataLoader(dataset, **cfg.dataloader)
         normalizer = dataset.get_normalizer()
