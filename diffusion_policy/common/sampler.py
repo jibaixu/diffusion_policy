@@ -121,7 +121,7 @@ class SequenceSampler:
     def sample_sequence(self, idx):
         #! >>>>>>>> 重新构造 zarr 数据对象 >>>>>>>>
         import zarr, os
-        zarr_path = 'data/AllTasks-v3/zarr_panda_traj700_multiview'
+        zarr_path = 'data/AllTasks-v3/zarr_xarm6_traj700_multiview'
         src_root = zarr.open(os.path.expanduser(zarr_path), 'r')
         #! <<<<<<<< 重新构造 zarr 数据对象 <<<<<<<<
 
