@@ -26,10 +26,11 @@ class AllTasksMixedRobotDataset(BaseImageDataset):
                 self.datasets.append(dataset)
 
         # 记录长度
-        self.lengths = []
+        self.lengths = []   #! 子数据集分为的训练集长度，并非正确数据集长度
         self.cumulative_lengths = []
         total = 0
         for dataset in self.datasets:
+            #! 子数据集中的长度已经划分成训练集并加载到 sampler 中，所以值为训练集长度，保证索引映射正确
             dataset_len = len(dataset)
             self.lengths.append(dataset_len)
             total += dataset_len
@@ -47,16 +48,12 @@ class AllTasksMixedRobotDataset(BaseImageDataset):
         raise IndexError(f"Index {idx} out of range for dataset length {self.total_length}")
         
     def get_normalizer(self, mode='limits', **kwargs):
-        data_action = []
-        data_state = []
+        #! 直接访问 replay_buffer，绕过内部 sampler，所以归一化是基于所有(训练集+验证集)数据
+        data_action = [dataset.replay_buffer['action'][:] for dataset in self.datasets]
+        data_state = [dataset.replay_buffer['state'][:] for dataset in self.datasets]
 
-        for dataset in self.datasets:
-            rb = dataset.replay_buffer
-            data_action.append(rb['action'][:])
-            data_state.append(rb['state'][:])
-
-        data_action = np.concatenate(data_action, axis=0)
-        data_state = np.concatenate(data_state, axis=0)
+        data_action = np.vstack(data_action)
+        data_state = np.vstack(data_state)
 
         data = {
             'action': data_action,
