@@ -30,9 +30,9 @@ from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from diffusion_policy.common.pytorch_util import dict_apply
 
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '4'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
-ROBOT = "panda" # ["panda", "widowxai", "xarm6", "xarm7"]
+ROBOT = "xarm6" # ["panda", "widowxai", "xarm6", "xarm7"]
 EPOCH = 260
 
 BENCHMARK_ENVS = ["PickCube-v1", "PushCube-v1", "StackCube-v1", "PullCube-v1", "PullCubeTool-v1", "PlaceSphere-v1", "LiftPegUpright-v1",]

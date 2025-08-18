@@ -30,3 +30,7 @@
     diffusion_policy/common/replay_buffer.py line 173
 
 3. zarr 数据对象并发读取问题
+
+    首先，zarr 是一种天然的分块磁盘映射格式的数据类型。通过 zarr.open() 可以构建一个磁盘映射对象而不会全部读入内存，只有当切片访问时才会从磁盘读到内存；
+    然后，zarr 磁盘映射对象并不是进程安全的。当 torch.DataLoader 设置多 worker 时，Dataset 会被 fork 到 worker 进程，此时可能出现问题。
+    dataset 中 getitem 方法是基于 sampler 采样器来
